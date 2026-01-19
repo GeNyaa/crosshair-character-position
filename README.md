@@ -32,6 +32,7 @@ A customizable crosshair overlay addon for World of Warcraft that displays a sim
 ### Configuration Options
 
 - **Size**: Adjust the crosshair size using the slider (5-100)
+- **Thickness**: Adjust the crosshair thickness using the slider (1-100)
 - **Color**: Customize the color using RGB sliders (0-100% for each channel)
 - **Position**: Fine-tune the position using:
   - X Offset slider and input field (horizontal position)
@@ -65,5 +66,6 @@ Nmxsz, modified by GeNyaa
 ## License
 
 Free to use and modify
+
 
 
