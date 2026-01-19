@@ -1,0 +1,9 @@
+## Interface: 110200
+## Title: Crosshair
+## Notes: Zeigt ein anpassbares Crosshair in der Bildschirmmitte an
+## Author: Nmxsz
+## Version: 1.0.0
+## SavedVariables: CrosshairDB
+
+crosshair.lua
+
