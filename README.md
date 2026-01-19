@@ -60,9 +60,10 @@ A customizable crosshair overlay addon for World of Warcraft that displays a sim
 
 ## Author
 
-YourName
+Nmxsz, modified by GeNyaa
 
 ## License
 
 Free to use and modify
+
 
