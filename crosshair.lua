@@ -8,41 +8,41 @@ Crosshair:EnableMouse(false)
 local L = {}
 local locale = GetLocale()
 
--- Deutsche Texte (Standard)
-L["TITLE"] = "Crosshair Einstellungen"
-L["SIZE"] = "Größe"
+-- English Text (Standard)
+L["TITLE"] = "Crosshair Settings"
+L["SIZE"] = "Size"
 L["THICKNESS"] = "Thickness"
-L["COLOR"] = "Farbe"
-L["RED"] = "Rot"
-L["GREEN"] = "Grün"
-L["BLUE"] = "Blau"
-L["ENABLE"] = "Crosshair aktivieren"
-L["X_OFFSET"] = "X-Versatz"
-L["Y_OFFSET"] = "Y-Versatz"
-L["RESET_POSITION"] = "Position zurücksetzen"
+L["COLOR"] = "Color"
+L["RED"] = "Red"
+L["GREEN"] = "Green"
+L["BLUE"] = "Blue"
+L["ENABLE"] = "Enable Crosshair"
+L["X_OFFSET"] = "X Offset"
+L["Y_OFFSET"] = "Y Offset"
+L["RESET_POSITION"] = "Reset Position"
 L["POSITION"] = "Position"
-L["NEW_ADDON_IDEAS"] = "Neue Addon-Ideen?"
-L["VISIT"] = "Besuche"
+L["NEW_ADDON_IDEAS"] = "New Addon Ideas?"
+L["VISIT"] = "Visit"
 
--- Englische Texte
-if locale == "enUS" or locale == "enGB" then
-    L["TITLE"] = "Crosshair Settings"
-    L["SIZE"] = "Size"
+-- German Text
+if locale == "deDE" then
+    L["TITLE"] = "Crosshair Einstellungen"
+    L["SIZE"] = "Größe"
     L["THICKNESS"] = "Thickness"
-    L["COLOR"] = "Color"
-    L["RED"] = "Red"
-    L["GREEN"] = "Green"
-    L["BLUE"] = "Blue"
-    L["ENABLE"] = "Enable Crosshair"
-    L["X_OFFSET"] = "X Offset"
-    L["Y_OFFSET"] = "Y Offset"
-    L["RESET_POSITION"] = "Reset Position"
+    L["COLOR"] = "Farbe"
+    L["RED"] = "Rot"
+    L["GREEN"] = "Grün"
+    L["BLUE"] = "Blau"
+    L["ENABLE"] = "Crosshair aktivieren"
+    L["X_OFFSET"] = "X-Versatz"
+    L["Y_OFFSET"] = "Y-Versatz"
+    L["RESET_POSITION"] = "Position zurücksetzen"
     L["POSITION"] = "Position"
-    L["NEW_ADDON_IDEAS"] = "New Addon Ideas?"
-    L["VISIT"] = "Visit"
+    L["NEW_ADDON_IDEAS"] = "Neue Addon-Ideen?"
+    L["VISIT"] = "Besuche"
 end
 
--- Spanische Texte
+-- Spanish Text
 if locale == "esES" or locale == "esMX" then
     L["TITLE"] = "Configuración de Mira"
     L["SIZE"] = "Tamaño"
@@ -60,7 +60,7 @@ if locale == "esES" or locale == "esMX" then
     L["VISIT"] = "Visita"
 end
 
--- Französische Texte
+-- French Text
 if locale == "frFR" then
     L["TITLE"] = "Paramètres du Reticule"
     L["SIZE"] = "Taille"
@@ -151,7 +151,7 @@ Crosshair:RegisterEvent("PLAYER_LOGIN")
 Crosshair:RegisterEvent("ADDON_LOADED")
 Crosshair:RegisterEvent("DISPLAY_SIZE_CHANGED")
 
--- Konfigurations-Fenster erstellen
+-- Create configuration window
 local configFrame = nil
 
 local function CreateConfigFrame()
@@ -290,17 +290,17 @@ local function CreateConfigFrame()
         UpdateCrosshair()
     end)
     
-    -- Position Label (rechte Seite)
+    -- Position Label (right side)
     local positionLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     positionLabel:SetPoint("TOPRIGHT", -20, -60)
     positionLabel:SetText(L["POSITION"] .. ":")
     
-    -- X-Versatz Label
+    -- X-offset label
     local xOffsetLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     xOffsetLabel:SetPoint("TOPRIGHT", positionLabel, "BOTTOMRIGHT", 0, -10)
     xOffsetLabel:SetText(L["X_OFFSET"] .. ":")
     
-    -- X-Versatz Slider (zuerst erstellen)
+    -- X-offset slider (create first)
     local xOffsetSlider = CreateFrame("Slider", "CrosshairFrameXOffsetSlider", panel, "OptionsSliderTemplate")
     xOffsetSlider:SetPoint("TOPRIGHT", xOffsetLabel, "BOTTOMRIGHT", 0, -10)
     xOffsetSlider:SetMinMaxValues(-500, 500)
@@ -311,7 +311,7 @@ local function CreateConfigFrame()
     getglobal(xOffsetSlider:GetName() .. "High"):SetText("500")
     getglobal(xOffsetSlider:GetName() .. "Text"):SetText(L["X_OFFSET"])
     
-    -- X-Versatz Eingabefeld
+    -- X-offset input field
     local xOffsetEditBox = CreateFrame("EditBox", "CrosshairXOffsetEditBox", panel, "InputBoxTemplate")
     xOffsetEditBox:SetSize(60, 20)
     xOffsetEditBox:SetPoint("TOPRIGHT", xOffsetSlider, "BOTTOMRIGHT", -10, -5)
@@ -341,12 +341,12 @@ local function CreateConfigFrame()
         UpdateCrosshair()
     end)
     
-    -- Y-Versatz Label
+    -- Y-offset label
     local yOffsetLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     yOffsetLabel:SetPoint("TOPRIGHT", xOffsetEditBox, "BOTTOMRIGHT", 0, -20)
     yOffsetLabel:SetText(L["Y_OFFSET"] .. ":")
     
-    -- Y-Versatz Slider (zuerst erstellen)
+    -- Y-offset slider (create first)
     local yOffsetSlider = CreateFrame("Slider", "CrosshairFrameYOffsetSlider", panel, "OptionsSliderTemplate")
     yOffsetSlider:SetPoint("TOPRIGHT", yOffsetLabel, "BOTTOMRIGHT", 0, -10)
     yOffsetSlider:SetMinMaxValues(-500, 500)
@@ -357,7 +357,7 @@ local function CreateConfigFrame()
     getglobal(yOffsetSlider:GetName() .. "High"):SetText("500")
     getglobal(yOffsetSlider:GetName() .. "Text"):SetText(L["Y_OFFSET"])
     
-    -- Y-Versatz Eingabefeld
+    -- Y-offset input field
     local yOffsetEditBox = CreateFrame("EditBox", "CrosshairYOffsetEditBox", panel, "InputBoxTemplate")
     yOffsetEditBox:SetSize(60, 20)
     yOffsetEditBox:SetPoint("TOPRIGHT", yOffsetSlider, "BOTTOMRIGHT", -10, -5)
@@ -387,7 +387,7 @@ local function CreateConfigFrame()
         UpdateCrosshair()
     end)
     
-    -- Position zurücksetzen Button
+    -- Reset position button
     local resetButton = CreateFrame("Button", "CrosshairResetPositionButton", panel, "UIPanelButtonTemplate")
     resetButton:SetSize(150, 25)
     resetButton:SetPoint("TOPRIGHT", yOffsetSlider, "BOTTOMRIGHT", 0, -30)
@@ -439,4 +439,3 @@ SlashCmdList["CROSSHAIR"] = function(msg)
         configFrame:Show()
     end
 end
-
