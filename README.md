@@ -6,6 +6,7 @@ A customizable crosshair overlay addon for World of Warcraft that displays a sim
 
 - **Customizable Crosshair**: Simple two-line crosshair design that appears in the center of your screen
 - **Size Adjustment**: Adjustable size from 5 to 100 pixels
+- **Thickness Adjustment**: Adjust thickness from 1 to 100 pixels
 - **Color Customization**: Full RGB color control with individual sliders for Red, Green, and Blue values
 - **Position Control**: Fine-tune the crosshair position with X and Y offset sliders and input fields (range: -500 to +500)
 - **Multi-Language Support**: Automatically detects and displays in:
@@ -32,7 +33,6 @@ A customizable crosshair overlay addon for World of Warcraft that displays a sim
 ### Configuration Options
 
 - **Size**: Adjust the crosshair size using the slider (5-100)
-- **Thickness**: Adjust the crosshair thickness using the slider (1-100)
 - **Color**: Customize the color using RGB sliders (0-100% for each channel)
 - **Position**: Fine-tune the position using:
   - X Offset slider and input field (horizontal position)
@@ -57,15 +57,13 @@ A customizable crosshair overlay addon for World of Warcraft that displays a sim
 
 ## Version
 
-1.0.0
+1.1.0
 
 ## Author
 
-Nmxsz, modified by GeNyaa
+Nmxsz, GeNyaa
 
 ## License
 
-Free to use and modify
-
-
+MIT License
 
