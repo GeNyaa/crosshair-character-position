@@ -27,6 +27,12 @@ L["VISIT"] = "Visit"
 L["BORDER"] = "Enable Border"
 L["BORDER_SIZE"] = "Border Size"
 L["BORDER_COLOR"] = "Border Color"
+L["VISIBILITY"] = "Visibility"
+L["ALWAYS"] = "Always"
+L["IN_COMBAT"] = "In Combat"
+L["IN_INSTANCE"] = "In Instance"
+L["IN_GROUP"] = "In Group"
+L["NEVER"] = "Never"
 
 -- German Text
 if locale == "deDE" then
@@ -48,6 +54,12 @@ if locale == "deDE" then
     L["BORDER"] = "Rahmen aktivieren"
     L["BORDER_SIZE"] = "Rahmengröße"
     L["BORDER_COLOR"] = "Rahmenfarbe"
+    L["VISIBILITY"] = "Sichtbarkeit"
+    L["ALWAYS"] = "Immer"
+    L["IN_COMBAT"] = "Im Kampf"
+    L["IN_INSTANCE"] = "In Instanz"
+    L["IN_GROUP"] = "In Gruppe"
+    L["NEVER"] = "Nie"
 end
 
 -- Spanish Text
@@ -70,6 +82,12 @@ if locale == "esES" or locale == "esMX" then
     L["BORDER"] = "Activar Borde"
     L["BORDER_SIZE"] = "Tamaño del Borde"
     L["BORDER_COLOR"] = "Color del Borde"
+    L["VISIBILITY"] = "Visibilidad"
+    L["ALWAYS"] = "Siempre"
+    L["IN_COMBAT"] = "En Combate"
+    L["IN_INSTANCE"] = "En Instancia"
+    L["IN_GROUP"] = "En Grupo"
+    L["NEVER"] = "Nunca"
 end
 
 -- French Text
@@ -92,6 +110,12 @@ if locale == "frFR" then
     L["BORDER"] = "Activer la Bordure"
     L["BORDER_SIZE"] = "Taille de la Bordure"
     L["BORDER_COLOR"] = "Couleur de la Bordure"
+    L["VISIBILITY"] = "Visibilité"
+    L["ALWAYS"] = "Toujours"
+    L["IN_COMBAT"] = "En Combat"
+    L["IN_INSTANCE"] = "En Instance"
+    L["IN_GROUP"] = "En Groupe"
+    L["NEVER"] = "Jamais"
 end
 
 -- Standard settings
@@ -105,7 +129,8 @@ local defaults = {
     thickness = 1,
     border = false,
     borderSize = 2,
-    borderColor = { r = 0, g = 0, b = 0, a = 1 } -- Black
+    borderColor = { r = 0, g = 0, b = 0, a = 1 }, -- Black
+    visibility = "always"                         -- always, combat, instance, group, never
 }
 
 -- Initialize database
@@ -169,6 +194,30 @@ leftTipBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
 local rightTipBorder = crosshairContainer:CreateTexture(nil, "BACKGROUND")
 rightTipBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
 
+-- Function to check visibility conditions
+local function ShouldShowCrosshair()
+    if not CrosshairDB.enabled then
+        return false
+    end
+
+    local visMode = CrosshairDB.visibility or "always"
+
+    if visMode == "never" then
+        return false
+    elseif visMode == "always" then
+        return true
+    elseif visMode == "combat" then
+        return InCombatLockdown()
+    elseif visMode == "instance" then
+        local inInstance, instanceType = IsInInstance()
+        return inInstance
+    elseif visMode == "group" then
+        return IsInGroup() or IsInRaid()
+    end
+
+    return true
+end
+
 -- Function to update the crosshair
 local function UpdateCrosshair()
     -- Ensure database is initialized
@@ -187,8 +236,9 @@ local function UpdateCrosshair()
     if not CrosshairDB.borderColor then CrosshairDB.borderColor = { r = 0, g = 0, b = 0, a = 1 } end
     if not CrosshairDB.offsetX then CrosshairDB.offsetX = defaults.offsetX end
     if not CrosshairDB.offsetY then CrosshairDB.offsetY = defaults.offsetY end
+    if not CrosshairDB.visibility then CrosshairDB.visibility = defaults.visibility end
 
-    if not CrosshairDB.enabled then
+    if not ShouldShowCrosshair() then
         horizontalLine:Hide()
         verticalLine:Hide()
         horizontalTopBorder:Hide()
@@ -307,6 +357,10 @@ end
 Crosshair:RegisterEvent("PLAYER_LOGIN")
 Crosshair:RegisterEvent("ADDON_LOADED")
 Crosshair:RegisterEvent("DISPLAY_SIZE_CHANGED")
+Crosshair:RegisterEvent("PLAYER_REGEN_DISABLED") -- Entering combat
+Crosshair:RegisterEvent("PLAYER_REGEN_ENABLED")  -- Leaving combat
+Crosshair:RegisterEvent("PLAYER_ENTERING_WORLD") -- Entering/leaving instance
+Crosshair:RegisterEvent("GROUP_ROSTER_UPDATE")   -- Group changes
 
 -- Create configuration window
 local configFrame = nil
@@ -317,7 +371,7 @@ local function CreateConfigFrame()
     end
 
     local frame = CreateFrame("Frame", "CrosshairConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(450, 450)
+    frame:SetSize(450, 500)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -350,14 +404,7 @@ local function CreateConfigFrame()
     sizeXSlider:SetObeyStepOnDrag(true)
     getglobal(sizeXSlider:GetName() .. "Low"):SetText("1")
     getglobal(sizeXSlider:GetName() .. "High"):SetText("100")
-    getglobal(sizeXSlider:GetName() .. "Text"):SetText(L["SIZE_X"] .. ": " .. CrosshairDB.sizeX)
-
-    sizeXSlider:SetScript("OnValueChanged", function(self, value)
-        value = math.floor(value)
-        CrosshairDB.sizeX = value
-        getglobal(self:GetName() .. "Text"):SetText(L["SIZE_X"] .. ": " .. value)
-        UpdateCrosshair()
-    end)
+    getglobal(sizeXSlider:GetName() .. "Text"):SetText(L["SIZE_X"])
 
     local xSizeEditBox = CreateFrame("EditBox", "CrosshairXSizeEditBox", panel, "InputBoxTemplate")
     xSizeEditBox:SetSize(60, 20)
@@ -401,14 +448,7 @@ local function CreateConfigFrame()
     sizeYSlider:SetObeyStepOnDrag(true)
     getglobal(sizeYSlider:GetName() .. "Low"):SetText("1")
     getglobal(sizeYSlider:GetName() .. "High"):SetText("100")
-    getglobal(sizeYSlider:GetName() .. "Text"):SetText(L["SIZE_Y"] .. ": " .. CrosshairDB.sizeY)
-
-    sizeYSlider:SetScript("OnValueChanged", function(self, value)
-        value = math.floor(value)
-        CrosshairDB.sizeY = value
-        getglobal(self:GetName() .. "Text"):SetText(L["SIZE_Y"] .. ": " .. value)
-        UpdateCrosshair()
-    end)
+    getglobal(sizeYSlider:GetName() .. "Text"):SetText(L["SIZE_Y"])
 
     local ySizeEditBox = CreateFrame("EditBox", "CrosshairYSizeEditBox", panel, "InputBoxTemplate")
     ySizeEditBox:SetSize(60, 20)
@@ -468,7 +508,7 @@ local function CreateConfigFrame()
 
     -- Crosshair Color Picker Button
     local colorButton = CreateFrame("Button", "CrosshairColorButton", panel)
-    colorButton:SetPoint("TOPLEFT", colorLabel, "BOTTOMLEFT", 5, -10)
+    colorButton:SetPoint("TOPLEFT", colorLabel, "BOTTOMLEFT", 0, -10)
     colorButton:SetSize(40, 40)
 
     -- Border frame
@@ -525,6 +565,46 @@ local function CreateConfigFrame()
         UpdateCrosshair()
     end)
 
+    -- Visibility dropdown
+    local visibilityLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    visibilityLabel:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 0, -10)
+    visibilityLabel:SetText(L["VISIBILITY"] .. ":")
+
+    local visibilityDropdown = CreateFrame("Frame", "CrosshairVisibilityDropdown", panel, "UIDropDownMenuTemplate")
+    visibilityDropdown:SetPoint("TOPLEFT", visibilityLabel, "BOTTOMLEFT", -15, -5)
+
+    local visibilityOptions = {
+        { value = "always",   text = L["ALWAYS"] },
+        { value = "combat",   text = L["IN_COMBAT"] },
+        { value = "instance", text = L["IN_INSTANCE"] },
+        { value = "group",    text = L["IN_GROUP"] },
+        { value = "never",    text = L["NEVER"] }
+    }
+
+    UIDropDownMenu_SetWidth(visibilityDropdown, 150)
+    UIDropDownMenu_Initialize(visibilityDropdown, function(self, level)
+        for _, option in ipairs(visibilityOptions) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = option.text
+            info.value = option.value
+            info.func = function()
+                CrosshairDB.visibility = option.value
+                UIDropDownMenu_SetText(visibilityDropdown, option.text)
+                UpdateCrosshair()
+            end
+            info.checked = (CrosshairDB.visibility == option.value)
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+
+    -- Set initial dropdown text
+    for _, option in ipairs(visibilityOptions) do
+        if option.value == (CrosshairDB.visibility or "always") then
+            UIDropDownMenu_SetText(visibilityDropdown, option.text)
+            break
+        end
+    end
+
     -- X-offset label
     local xOffsetLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     xOffsetLabel:SetPoint("TOPRIGHT", -20, -10)
@@ -551,7 +631,7 @@ local function CreateConfigFrame()
     xOffsetEditBox:SetScript("OnEnterPressed", function(self)
         local input = self:GetText()
         local value = tonumber(input)
-        if value ~=nil then
+        if value ~= nil then
             value = math.max(-500, math.min(500, math.floor(value)))
             self:SetText(tostring(value))
             CrosshairDB.offsetX = value
@@ -600,9 +680,9 @@ local function CreateConfigFrame()
     yOffsetEditBox:SetText(tostring(CrosshairDB.offsetY or 0))
 
     yOffsetEditBox:SetScript("OnEnterPressed", function(self)
-    local input = self:GetText()
-    local value = tonumber(input)
-        if value ~=nil then
+        local input = self:GetText()
+        local value = tonumber(input)
+        if value ~= nil then
             value = math.max(-500, math.min(500, math.floor(value)))
             self:SetText(tostring(value))
             CrosshairDB.offsetY = value
@@ -648,7 +728,6 @@ local function CreateConfigFrame()
         "InterfaceOptionsCheckButtonTemplate")
     borderCheckbox:SetPoint("TOPRIGHT", resetButton, "BOTTOMRIGHT", 0, -10)
     borderCheckbox:SetChecked(CrosshairDB.border)
-    --getglobal(borderCheckbox:GetName() .. "Text"):SetText(L["BORDER"])
 
     local text = getglobal(borderCheckbox:GetName() .. "Text")
     text:SetText(L["BORDER"])
@@ -744,15 +823,18 @@ Crosshair:SetScript("OnEvent", function(self, event, addonName)
     if event == "ADDON_LOADED" and addonName == "crosshair" then
         UpdateCrosshair()
         print("|cFF00FF00===================================|r")
-        print("|cFF00FF00Crosshair|r |cFF88AAFFv1.2.0|r")
+        print("|cFF00FF00Crosshair|r |cFF88AAFFv1.3.0|r")
         print(" ")
         print("|cFF88AAFF" .. L["NEW_ADDON_IDEAS"] .. "|r")
         print("|cFFFFFFFF" .. L["VISIT"] .. "|r |cFF00FF00https://www.addon-forge.de/|r")
         print(" ")
     elseif event == "PLAYER_LOGIN" then
         UpdateCrosshair()
-        CreateConfigFrame() -- Frame erstellen
+        CreateConfigFrame()
     elseif event == "DISPLAY_SIZE_CHANGED" then
+        UpdateCrosshair()
+    elseif event == "PLAYER_REGEN_DISABLED" or event == "PLAYER_REGEN_ENABLED" or
+        event == "PLAYER_ENTERING_WORLD" or event == "GROUP_ROSTER_UPDATE" then
         UpdateCrosshair()
     end
 end)
