@@ -10,7 +10,8 @@ local locale = GetLocale()
 
 -- English Text (Standard)
 L["TITLE"] = "Crosshair Settings"
-L["SIZE"] = "Size"
+L["SIZE_X"] = "Horizontal Size"
+L["SIZE_Y"] = "Vertical Size"
 L["THICKNESS"] = "Thickness"
 L["COLOR"] = "Color"
 L["RED"] = "Red"
@@ -23,12 +24,22 @@ L["RESET_POSITION"] = "Reset Position"
 L["POSITION"] = "Position"
 L["NEW_ADDON_IDEAS"] = "New Addon Ideas?"
 L["VISIT"] = "Visit"
+L["BORDER"] = "Enable Border"
+L["BORDER_SIZE"] = "Border Size"
+L["BORDER_COLOR"] = "Border Color"
+L["VISIBILITY"] = "Visibility"
+L["ALWAYS"] = "Always"
+L["IN_COMBAT"] = "In Combat"
+L["IN_INSTANCE"] = "In Instance"
+L["IN_GROUP"] = "In Group"
+L["NEVER"] = "Never"
 
 -- German Text
 if locale == "deDE" then
     L["TITLE"] = "Crosshair Einstellungen"
-    L["SIZE"] = "Größe"
-    L["THICKNESS"] = "Thickness"
+    L["SIZE_X"] = "Horizontale Größe"
+    L["SIZE_Y"] = "Vertikale Größe"
+    L["THICKNESS"] = "Dicke"
     L["COLOR"] = "Farbe"
     L["RED"] = "Rot"
     L["GREEN"] = "Grün"
@@ -40,13 +51,23 @@ if locale == "deDE" then
     L["POSITION"] = "Position"
     L["NEW_ADDON_IDEAS"] = "Neue Addon-Ideen?"
     L["VISIT"] = "Besuche"
+    L["BORDER"] = "Rahmen aktivieren"
+    L["BORDER_SIZE"] = "Rahmengröße"
+    L["BORDER_COLOR"] = "Rahmenfarbe"
+    L["VISIBILITY"] = "Sichtbarkeit"
+    L["ALWAYS"] = "Immer"
+    L["IN_COMBAT"] = "Im Kampf"
+    L["IN_INSTANCE"] = "In Instanz"
+    L["IN_GROUP"] = "In Gruppe"
+    L["NEVER"] = "Nie"
 end
 
 -- Spanish Text
 if locale == "esES" or locale == "esMX" then
     L["TITLE"] = "Configuración de Mira"
-    L["SIZE"] = "Tamaño"
-    L["THICKNESS"] = "Thickness"
+    L["SIZE_X"] = "Tamaño Horizontal"
+    L["SIZE_Y"] = "Tamaño Vertical"
+    L["THICKNESS"] = "Grosor"
     L["COLOR"] = "Color"
     L["RED"] = "Rojo"
     L["GREEN"] = "Verde"
@@ -58,13 +79,23 @@ if locale == "esES" or locale == "esMX" then
     L["POSITION"] = "Posición"
     L["NEW_ADDON_IDEAS"] = "¿Nuevas Ideas de Addon?"
     L["VISIT"] = "Visita"
+    L["BORDER"] = "Activar Borde"
+    L["BORDER_SIZE"] = "Tamaño del Borde"
+    L["BORDER_COLOR"] = "Color del Borde"
+    L["VISIBILITY"] = "Visibilidad"
+    L["ALWAYS"] = "Siempre"
+    L["IN_COMBAT"] = "En Combate"
+    L["IN_INSTANCE"] = "En Instancia"
+    L["IN_GROUP"] = "En Grupo"
+    L["NEVER"] = "Nunca"
 end
 
 -- French Text
 if locale == "frFR" then
     L["TITLE"] = "Paramètres du Reticule"
-    L["SIZE"] = "Taille"
-    L["THICKNESS"] = "Thickness"
+    L["SIZE_X"] = "Taille Horizontale"
+    L["SIZE_Y"] = "Taille Verticale"
+    L["THICKNESS"] = "Épaisseur"
     L["COLOR"] = "Couleur"
     L["RED"] = "Rouge"
     L["GREEN"] = "Vert"
@@ -76,80 +107,260 @@ if locale == "frFR" then
     L["POSITION"] = "Position"
     L["NEW_ADDON_IDEAS"] = "Nouvelles Idées d'Addon?"
     L["VISIT"] = "Visitez"
+    L["BORDER"] = "Activer la Bordure"
+    L["BORDER_SIZE"] = "Taille de la Bordure"
+    L["BORDER_COLOR"] = "Couleur de la Bordure"
+    L["VISIBILITY"] = "Visibilité"
+    L["ALWAYS"] = "Toujours"
+    L["IN_COMBAT"] = "En Combat"
+    L["IN_INSTANCE"] = "En Instance"
+    L["IN_GROUP"] = "En Groupe"
+    L["NEVER"] = "Jamais"
 end
 
 -- Standard settings
 local defaults = {
-    size = 20,
-    color = {r = 0, g = 1, b = 0, a = 1}, -- Green
+    sizeX = 20,
+    sizeY = 20,
+    color = { r = 0, g = 1, b = 0, a = 1 }, -- Green
     enabled = true,
     offsetX = 0,
     offsetY = 0,
-    thickness = 1
+    thickness = 1,
+    border = false,
+    borderSize = 2,
+    borderColor = { r = 0, g = 0, b = 0, a = 1 }, -- Black
+    visibility = "always"                         -- always, combat, instance, group, never
 }
 
 -- Initialize database
 CrosshairDB = CrosshairDB or {}
+
+-- Apply defaults for any missing values
 for k, v in pairs(defaults) do
     if CrosshairDB[k] == nil then
-        CrosshairDB[k] = v
+        if type(v) == "table" then
+            CrosshairDB[k] = {}
+            for k2, v2 in pairs(v) do
+                CrosshairDB[k][k2] = v2
+            end
+        else
+            CrosshairDB[k] = v
+        end
     end
 end
 
 -- Container frame for the crosshair (for moving)
 local crosshairContainer = CreateFrame("Frame", "CrosshairContainer", UIParent)
-crosshairContainer:SetFrameStrata("TOOLTIP")
+crosshairContainer:SetFrameStrata("LOW")
 crosshairContainer:SetSize(1, 1)
 crosshairContainer:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 crosshairContainer:EnableMouse(false)
 crosshairContainer:SetMovable(true)
 
 -- Horizontal line
-local horizontalLine = crosshairContainer:CreateTexture(nil, "OVERLAY")
+local horizontalLine = crosshairContainer:CreateTexture(nil, "ARTWORK")
 horizontalLine:SetTexture("Interface\\Buttons\\WHITE8X8")
 horizontalLine:SetVertexColor(CrosshairDB.color.r, CrosshairDB.color.g, CrosshairDB.color.b, CrosshairDB.color.a)
 
 -- Vertical line
-local verticalLine = crosshairContainer:CreateTexture(nil, "OVERLAY")
+local verticalLine = crosshairContainer:CreateTexture(nil, "ARTWORK")
 verticalLine:SetTexture("Interface\\Buttons\\WHITE8X8")
 verticalLine:SetVertexColor(CrosshairDB.color.r, CrosshairDB.color.g, CrosshairDB.color.b, CrosshairDB.color.a)
 
+-- Border textures - along the lines
+local horizontalTopBorder = crosshairContainer:CreateTexture(nil, "BACKGROUND")
+horizontalTopBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
+
+local horizontalBottomBorder = crosshairContainer:CreateTexture(nil, "BACKGROUND")
+horizontalBottomBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
+
+local verticalLeftBorder = crosshairContainer:CreateTexture(nil, "BACKGROUND")
+verticalLeftBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
+
+local verticalRightBorder = crosshairContainer:CreateTexture(nil, "BACKGROUND")
+verticalRightBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
+
+-- Border textures - at the tips
+local topTipBorder = crosshairContainer:CreateTexture(nil, "BACKGROUND")
+topTipBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
+
+local bottomTipBorder = crosshairContainer:CreateTexture(nil, "BACKGROUND")
+bottomTipBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
+
+local leftTipBorder = crosshairContainer:CreateTexture(nil, "BACKGROUND")
+leftTipBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
+
+local rightTipBorder = crosshairContainer:CreateTexture(nil, "BACKGROUND")
+rightTipBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
+
+-- Function to check visibility conditions
+local function ShouldShowCrosshair()
+    if not CrosshairDB.enabled then
+        return false
+    end
+
+    local visMode = CrosshairDB.visibility or "always"
+
+    if visMode == "never" then
+        return false
+    elseif visMode == "always" then
+        return true
+    elseif visMode == "combat" then
+        return InCombatLockdown()
+    elseif visMode == "instance" then
+        local inInstance, instanceType = IsInInstance()
+        return inInstance
+    elseif visMode == "group" then
+        return IsInGroup() or IsInRaid()
+    end
+
+    return true
+end
+
 -- Function to update the crosshair
 local function UpdateCrosshair()
-    if not CrosshairDB.enabled then
+    -- Ensure database is initialized
+    if not CrosshairDB then
+        CrosshairDB = {}
+    end
+
+    -- Apply defaults if values are missing
+    if not CrosshairDB.sizeX then CrosshairDB.sizeX = defaults.sizeX end
+    if not CrosshairDB.sizeY then CrosshairDB.sizeY = defaults.sizeY end
+    if not CrosshairDB.thickness then CrosshairDB.thickness = defaults.thickness end
+    if not CrosshairDB.borderSize then CrosshairDB.borderSize = defaults.borderSize end
+    if CrosshairDB.border == nil then CrosshairDB.border = defaults.border end
+    if CrosshairDB.enabled == nil then CrosshairDB.enabled = defaults.enabled end
+    if not CrosshairDB.color then CrosshairDB.color = { r = 0, g = 1, b = 0, a = 1 } end
+    if not CrosshairDB.borderColor then CrosshairDB.borderColor = { r = 0, g = 0, b = 0, a = 1 } end
+    if not CrosshairDB.offsetX then CrosshairDB.offsetX = defaults.offsetX end
+    if not CrosshairDB.offsetY then CrosshairDB.offsetY = defaults.offsetY end
+    if not CrosshairDB.visibility then CrosshairDB.visibility = defaults.visibility end
+
+    if not ShouldShowCrosshair() then
         horizontalLine:Hide()
         verticalLine:Hide()
+        horizontalTopBorder:Hide()
+        horizontalBottomBorder:Hide()
+        verticalLeftBorder:Hide()
+        verticalRightBorder:Hide()
+        topTipBorder:Hide()
+        bottomTipBorder:Hide()
+        leftTipBorder:Hide()
+        rightTipBorder:Hide()
         crosshairContainer:EnableMouse(false)
         return
     end
-    
+
     horizontalLine:Show()
     verticalLine:Show()
-    
-    local size = CrosshairDB.size
-    local thickness = CrosshairDB.thickness or 1
-    
+
+    local sizeX = CrosshairDB.sizeX
+    local sizeY = CrosshairDB.sizeY
+    local thickness = CrosshairDB.thickness
+    local borderEnabled = CrosshairDB.border
+    local borderSize = CrosshairDB.borderSize
+
     -- Container Position aktualisieren
     crosshairContainer:ClearAllPoints()
-    crosshairContainer:SetPoint("CENTER", UIParent, "CENTER", CrosshairDB.offsetX or 0, CrosshairDB.offsetY or 0)
-    
+    crosshairContainer:SetPoint("CENTER", UIParent, "CENTER", CrosshairDB.offsetX, CrosshairDB.offsetY)
+
     -- Horizontal line
-    horizontalLine:SetSize(size * 2, thickness * 2)
+    horizontalLine:SetSize(sizeX * 2, thickness * 2)
     horizontalLine:SetPoint("CENTER", crosshairContainer, "CENTER", 0, 0)
-    
+
     -- Vertical line
-    verticalLine:SetSize(thickness * 2, size * 2)
+    verticalLine:SetSize(thickness * 2, sizeY * 2)
     verticalLine:SetPoint("CENTER", crosshairContainer, "CENTER", 0, 0)
-    
+
     -- Update color
     horizontalLine:SetVertexColor(CrosshairDB.color.r, CrosshairDB.color.g, CrosshairDB.color.b, CrosshairDB.color.a)
     verticalLine:SetVertexColor(CrosshairDB.color.r, CrosshairDB.color.g, CrosshairDB.color.b, CrosshairDB.color.a)
+
+    -- Update borders
+    if borderEnabled then
+        -- Update border colors
+        horizontalTopBorder:SetVertexColor(CrosshairDB.borderColor.r, CrosshairDB.borderColor.g,
+            CrosshairDB.borderColor.b, CrosshairDB.borderColor.a)
+        horizontalBottomBorder:SetVertexColor(CrosshairDB.borderColor.r, CrosshairDB.borderColor.g,
+            CrosshairDB.borderColor.b, CrosshairDB.borderColor.a)
+        verticalLeftBorder:SetVertexColor(CrosshairDB.borderColor.r, CrosshairDB.borderColor.g, CrosshairDB.borderColor
+            .b, CrosshairDB.borderColor.a)
+        verticalRightBorder:SetVertexColor(CrosshairDB.borderColor.r, CrosshairDB.borderColor.g,
+            CrosshairDB.borderColor.b, CrosshairDB.borderColor.a)
+        topTipBorder:SetVertexColor(CrosshairDB.borderColor.r, CrosshairDB.borderColor.g, CrosshairDB.borderColor.b,
+            CrosshairDB.borderColor.a)
+        bottomTipBorder:SetVertexColor(CrosshairDB.borderColor.r, CrosshairDB.borderColor.g, CrosshairDB.borderColor.b,
+            CrosshairDB.borderColor.a)
+        leftTipBorder:SetVertexColor(CrosshairDB.borderColor.r, CrosshairDB.borderColor.g, CrosshairDB.borderColor.b,
+            CrosshairDB.borderColor.a)
+        rightTipBorder:SetVertexColor(CrosshairDB.borderColor.r, CrosshairDB.borderColor.g, CrosshairDB.borderColor.b,
+            CrosshairDB.borderColor.a)
+
+        -- Borders along the horizontal line (top and bottom)
+        horizontalTopBorder:ClearAllPoints()
+        horizontalTopBorder:SetSize(sizeX * 2, borderSize)
+        horizontalTopBorder:SetPoint("BOTTOM", horizontalLine, "TOP", 0, 0)
+        horizontalTopBorder:Show()
+
+        horizontalBottomBorder:ClearAllPoints()
+        horizontalBottomBorder:SetSize(sizeX * 2, borderSize)
+        horizontalBottomBorder:SetPoint("TOP", horizontalLine, "BOTTOM", 0, 0)
+        horizontalBottomBorder:Show()
+
+        -- Borders along the vertical line (left and right)
+        verticalLeftBorder:ClearAllPoints()
+        verticalLeftBorder:SetSize(borderSize, sizeY * 2)
+        verticalLeftBorder:SetPoint("RIGHT", verticalLine, "LEFT", 0, 0)
+        verticalLeftBorder:Show()
+
+        verticalRightBorder:ClearAllPoints()
+        verticalRightBorder:SetSize(borderSize, sizeY * 2)
+        verticalRightBorder:SetPoint("LEFT", verticalLine, "RIGHT", 0, 0)
+        verticalRightBorder:Show()
+
+        -- Tip borders at the ends of the vertical line (top and bottom tips)
+        topTipBorder:ClearAllPoints()
+        topTipBorder:SetSize(thickness * 2 + borderSize * 2, borderSize)
+        topTipBorder:SetPoint("BOTTOM", verticalLine, "TOP", 0, 0)
+        topTipBorder:Show()
+
+        bottomTipBorder:ClearAllPoints()
+        bottomTipBorder:SetSize(thickness * 2 + borderSize * 2, borderSize)
+        bottomTipBorder:SetPoint("TOP", verticalLine, "BOTTOM", 0, 0)
+        bottomTipBorder:Show()
+
+        -- Tip borders at the ends of the horizontal line (left and right tips)
+        leftTipBorder:ClearAllPoints()
+        leftTipBorder:SetSize(borderSize, thickness * 2 + borderSize * 2)
+        leftTipBorder:SetPoint("RIGHT", horizontalLine, "LEFT", 0, 0)
+        leftTipBorder:Show()
+
+        rightTipBorder:ClearAllPoints()
+        rightTipBorder:SetSize(borderSize, thickness * 2 + borderSize * 2)
+        rightTipBorder:SetPoint("LEFT", horizontalLine, "RIGHT", 0, 0)
+        rightTipBorder:Show()
+    else
+        horizontalTopBorder:Hide()
+        horizontalBottomBorder:Hide()
+        verticalLeftBorder:Hide()
+        verticalRightBorder:Hide()
+        topTipBorder:Hide()
+        bottomTipBorder:Hide()
+        leftTipBorder:Hide()
+        rightTipBorder:Hide()
+    end
 end
 
 -- Initialization
 Crosshair:RegisterEvent("PLAYER_LOGIN")
 Crosshair:RegisterEvent("ADDON_LOADED")
 Crosshair:RegisterEvent("DISPLAY_SIZE_CHANGED")
+Crosshair:RegisterEvent("PLAYER_REGEN_DISABLED") -- Entering combat
+Crosshair:RegisterEvent("PLAYER_REGEN_ENABLED")  -- Leaving combat
+Crosshair:RegisterEvent("PLAYER_ENTERING_WORLD") -- Entering/leaving instance
+Crosshair:RegisterEvent("GROUP_ROSTER_UPDATE")   -- Group changes
 
 -- Create configuration window
 local configFrame = nil
@@ -158,9 +369,9 @@ local function CreateConfigFrame()
     if configFrame then
         return configFrame
     end
-    
+
     local frame = CreateFrame("Frame", "CrosshairConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(600, 500)
+    frame:SetSize(450, 500)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -169,137 +380,235 @@ local function CreateConfigFrame()
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
     frame:SetFrameStrata("DIALOG")
     frame:Hide()
-    
+
     -- Titel
     frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     frame.title:SetPoint("LEFT", frame.TitleBg, "LEFT", 5, 0)
     frame.title:SetText(L["TITLE"])
-    
+
     local panel = CreateFrame("Frame", nil, frame)
     panel:SetAllPoints(frame)
     panel:SetPoint("TOPLEFT", 10, -30)
     panel:SetPoint("BOTTOMRIGHT", -10, 10)
-    
-    -- Size Label
-    local sizeLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    sizeLabel:SetPoint("TOPLEFT", 20, -60)
-    sizeLabel:SetText(L["SIZE"] .. ":")
-    
-    -- Size Slider
-    local sizeSlider = CreateFrame("Slider", "CrosshairFrameSizeSlider", panel, "OptionsSliderTemplate")
-    sizeSlider:SetPoint("TOPLEFT", sizeLabel, "BOTTOMLEFT", 0, -10)
-    sizeSlider:SetMinMaxValues(5, 100)
-    sizeSlider:SetValue(CrosshairDB.size)
-    sizeSlider:SetValueStep(1)
-    sizeSlider:SetObeyStepOnDrag(true)
-    getglobal(sizeSlider:GetName() .. "Low"):SetText("5")
-    getglobal(sizeSlider:GetName() .. "High"):SetText("100")
-    getglobal(sizeSlider:GetName() .. "Text"):SetText(L["SIZE"] .. ": " .. CrosshairDB.size)
-    
-    sizeSlider:SetScript("OnValueChanged", function(self, value)
+
+    -- Horizontal Size Label
+    local sizeXLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    sizeXLabel:SetPoint("TOPLEFT", 20, -10)
+
+    -- Horizontal Size Slider
+    local sizeXSlider = CreateFrame("Slider", "CrosshairFrameSizeXSlider", panel, "OptionsSliderTemplate")
+    sizeXSlider:SetPoint("TOPLEFT", sizeXLabel, "BOTTOMLEFT", 0, -10)
+    sizeXSlider:SetMinMaxValues(1, 100)
+    sizeXSlider:SetValue(CrosshairDB.sizeX)
+    sizeXSlider:SetValueStep(1)
+    sizeXSlider:SetObeyStepOnDrag(true)
+    getglobal(sizeXSlider:GetName() .. "Low"):SetText("1")
+    getglobal(sizeXSlider:GetName() .. "High"):SetText("100")
+    getglobal(sizeXSlider:GetName() .. "Text"):SetText(L["SIZE_X"])
+
+    local xSizeEditBox = CreateFrame("EditBox", "CrosshairXSizeEditBox", panel, "InputBoxTemplate")
+    xSizeEditBox:SetSize(60, 20)
+    xSizeEditBox:SetPoint("TOPLEFT", sizeXSlider, "BOTTOMLEFT", 0, -15)
+    xSizeEditBox:SetAutoFocus(false)
+    xSizeEditBox:SetNumeric(true)
+    xSizeEditBox:SetText(tostring(CrosshairDB.sizeX or 0))
+
+    xSizeEditBox:SetScript("OnEnterPressed", function(self)
+        local value = tonumber(self:GetText()) or 0
+        value = math.max(1, math.min(100, math.floor(value)))
+        self:SetText(tostring(value))
+        CrosshairDB.sizeX = value
+        sizeXSlider:SetValue(value)
+        UpdateCrosshair()
+        self:ClearFocus()
+    end)
+
+    xSizeEditBox:SetScript("OnEscapePressed", function(self)
+        self:SetText(tostring(CrosshairDB.sizeX or 0))
+        self:ClearFocus()
+    end)
+
+    sizeXSlider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value)
-        CrosshairDB.size = value
-        getglobal(self:GetName() .. "Text"):SetText(L["SIZE"] .. ": " .. value)
+        CrosshairDB.sizeX = value
+        xSizeEditBox:SetText(tostring(value))
+        UpdateCrosshair()
+    end)
+
+    -- Vertical Size Label
+    local sizeYLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    sizeYLabel:SetPoint("TOPLEFT", xSizeEditBox, "BOTTOMLEFT", 0, -10)
+
+    -- Vertical Size Slider
+    local sizeYSlider = CreateFrame("Slider", "CrosshairFrameSizeYSlider", panel, "OptionsSliderTemplate")
+    sizeYSlider:SetPoint("TOPLEFT", sizeYLabel, "BOTTOMLEFT", 0, -10)
+    sizeYSlider:SetMinMaxValues(1, 100)
+    sizeYSlider:SetValue(CrosshairDB.sizeY)
+    sizeYSlider:SetValueStep(1)
+    sizeYSlider:SetObeyStepOnDrag(true)
+    getglobal(sizeYSlider:GetName() .. "Low"):SetText("1")
+    getglobal(sizeYSlider:GetName() .. "High"):SetText("100")
+    getglobal(sizeYSlider:GetName() .. "Text"):SetText(L["SIZE_Y"])
+
+    local ySizeEditBox = CreateFrame("EditBox", "CrosshairYSizeEditBox", panel, "InputBoxTemplate")
+    ySizeEditBox:SetSize(60, 20)
+    ySizeEditBox:SetPoint("TOPLEFT", sizeYSlider, "BOTTOMLEFT", 0, -15)
+    ySizeEditBox:SetAutoFocus(false)
+    ySizeEditBox:SetNumeric(true)
+    ySizeEditBox:SetText(tostring(CrosshairDB.sizeY or 0))
+
+    ySizeEditBox:SetScript("OnEnterPressed", function(self)
+        local value = tonumber(self:GetText()) or 0
+        value = math.max(1, math.min(100, math.floor(value)))
+        self:SetText(tostring(value))
+        CrosshairDB.sizeY = value
+        sizeYSlider:SetValue(value)
+        UpdateCrosshair()
+        self:ClearFocus()
+    end)
+
+    ySizeEditBox:SetScript("OnEscapePressed", function(self)
+        self:SetText(tostring(CrosshairDB.sizeY or 0))
+        self:ClearFocus()
+    end)
+
+    sizeYSlider:SetScript("OnValueChanged", function(self, value)
+        value = math.floor(value)
+        CrosshairDB.sizeY = value
+        ySizeEditBox:SetText(tostring(value))
         UpdateCrosshair()
     end)
 
     -- Thickness Label
     local thicknessLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    thicknessLabel:SetPoint("TOPLEFT", 20, 0)
-    thicknessLabel:SetText(L["THICKNESS"] .. ":")
+    thicknessLabel:SetPoint("TOPLEFT", ySizeEditBox, "BOTTOMLEFT", 0, -10)
 
     -- Thickness Slider
     local thicknessSlider = CreateFrame("Slider", "CrosshairFrameThicknessSlider", panel, "OptionsSliderTemplate")
-    thicknessSlider:SetPoint("TOPLEFT", thicknessLabel, "BOTTOMLEFT", 0, -15)
-    thicknessSlider:SetMinMaxValues(1, 100)
+    thicknessSlider:SetPoint("TOPLEFT", thicknessLabel, "BOTTOMLEFT", 0, -10)
+    thicknessSlider:SetMinMaxValues(1, 50)
     thicknessSlider:SetValue(CrosshairDB.thickness or 1)
     thicknessSlider:SetValueStep(1)
     thicknessSlider:SetObeyStepOnDrag(true)
     getglobal(thicknessSlider:GetName() .. "Low"):SetText("1")
-    getglobal(thicknessSlider:GetName() .. "High"):SetText("100")
+    getglobal(thicknessSlider:GetName() .. "High"):SetText("50")
     getglobal(thicknessSlider:GetName() .. "Text"):SetText(L["THICKNESS"] .. ": " .. (CrosshairDB.thickness or 1))
-    
+
     thicknessSlider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value)
         CrosshairDB.thickness = value
-        getglobal(self:GetName() .. "Text"):SetText(L["SIZE"] .. ": " .. value)
+        getglobal(self:GetName() .. "Text"):SetText(L["THICKNESS"] .. ": " .. value)
         UpdateCrosshair()
     end)
-    
+
     -- Farbe Label
     local colorLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    colorLabel:SetPoint("TOPLEFT", 20, -130)
+    colorLabel:SetPoint("TOPLEFT", thicknessSlider, "BOTTOMLEFT", 0, -20)
     colorLabel:SetText(L["COLOR"] .. ":")
-    
-    -- Red Slider
-    local redSlider = CreateFrame("Slider", "CrosshairFrameRedSlider", panel, "OptionsSliderTemplate")
-    redSlider:SetPoint("TOPLEFT", colorLabel, "BOTTOMLEFT", 0, -10)
-    redSlider:SetMinMaxValues(0, 1)
-    redSlider:SetValue(CrosshairDB.color.r)
-    redSlider:SetValueStep(0.01)
-    getglobal(redSlider:GetName() .. "Low"):SetText("0")
-    getglobal(redSlider:GetName() .. "High"):SetText("1")
-    getglobal(redSlider:GetName() .. "Text"):SetText(L["RED"] .. ": " .. math.floor(CrosshairDB.color.r * 100) .. "%")
-    
-    redSlider:SetScript("OnValueChanged", function(self, value)
-        CrosshairDB.color.r = value
-        getglobal(self:GetName() .. "Text"):SetText(L["RED"] .. ": " .. math.floor(value * 100) .. "%")
-        UpdateCrosshair()
+
+    -- Crosshair Color Picker Button
+    local colorButton = CreateFrame("Button", "CrosshairColorButton", panel)
+    colorButton:SetPoint("TOPLEFT", colorLabel, "BOTTOMLEFT", 0, -10)
+    colorButton:SetSize(40, 40)
+
+    -- Border frame
+    local colorBorderFrame = CreateFrame("Frame", nil, colorButton)
+    colorBorderFrame:SetAllPoints()
+    colorBorderFrame:SetFrameLevel(colorButton:GetFrameLevel() - 1)
+    local colorBorderTex = colorBorderFrame:CreateTexture(nil, "BACKGROUND")
+    colorBorderTex:SetAllPoints()
+    colorBorderTex:SetColorTexture(0.3, 0.3, 0.3, 1)
+
+    -- Color preview texture (inset)
+    local colorTexture = colorButton:CreateTexture(nil, "ARTWORK")
+    colorTexture:SetPoint("TOPLEFT", 2, -2)
+    colorTexture:SetPoint("BOTTOMRIGHT", -2, 2)
+    colorTexture:SetColorTexture(CrosshairDB.color.r, CrosshairDB.color.g, CrosshairDB.color.b, 1)
+
+    colorButton:SetScript("OnClick", function(self)
+        local previousR, previousG, previousB = CrosshairDB.color.r, CrosshairDB.color.g, CrosshairDB.color.b
+
+        local info = {
+            r = CrosshairDB.color.r,
+            g = CrosshairDB.color.g,
+            b = CrosshairDB.color.b,
+            opacity = 1,
+            hasOpacity = false,
+            swatchFunc = function()
+                local r, g, b = ColorPickerFrame:GetColorRGB()
+                CrosshairDB.color.r = r
+                CrosshairDB.color.g = g
+                CrosshairDB.color.b = b
+                colorTexture:SetColorTexture(r, g, b, 1)
+                UpdateCrosshair()
+            end,
+            cancelFunc = function()
+                CrosshairDB.color.r = previousR
+                CrosshairDB.color.g = previousG
+                CrosshairDB.color.b = previousB
+                colorTexture:SetColorTexture(previousR, previousG, previousB, 1)
+                UpdateCrosshair()
+            end,
+        }
+        ColorPickerFrame:SetupColorPickerAndShow(info)
     end)
-    
-    -- Green Slider
-    local greenSlider = CreateFrame("Slider", "CrosshairFrameGreenSlider", panel, "OptionsSliderTemplate")
-    greenSlider:SetPoint("TOPLEFT", redSlider, "BOTTOMLEFT", 0, -20)
-    greenSlider:SetMinMaxValues(0, 1)
-    greenSlider:SetValue(CrosshairDB.color.g)
-    greenSlider:SetValueStep(0.01)
-    getglobal(greenSlider:GetName() .. "Low"):SetText("0")
-    getglobal(greenSlider:GetName() .. "High"):SetText("1")
-    getglobal(greenSlider:GetName() .. "Text"):SetText(L["GREEN"] .. ": " .. math.floor(CrosshairDB.color.g * 100) .. "%")
-    
-    greenSlider:SetScript("OnValueChanged", function(self, value)
-        CrosshairDB.color.g = value
-        getglobal(self:GetName() .. "Text"):SetText(L["GREEN"] .. ": " .. math.floor(value * 100) .. "%")
-        UpdateCrosshair()
-    end)
-    
-    -- Blue Slider
-    local blueSlider = CreateFrame("Slider", "CrosshairFrameBlueSlider", panel, "OptionsSliderTemplate")
-    blueSlider:SetPoint("TOPLEFT", greenSlider, "BOTTOMLEFT", 0, -20)
-    blueSlider:SetMinMaxValues(0, 1)
-    blueSlider:SetValue(CrosshairDB.color.b)
-    blueSlider:SetValueStep(0.01)
-    getglobal(blueSlider:GetName() .. "Low"):SetText("0")
-    getglobal(blueSlider:GetName() .. "High"):SetText("1")
-    getglobal(blueSlider:GetName() .. "Text"):SetText(L["BLUE"] .. ": " .. math.floor(CrosshairDB.color.b * 100) .. "%")
-    
-    blueSlider:SetScript("OnValueChanged", function(self, value)
-        CrosshairDB.color.b = value
-        getglobal(self:GetName() .. "Text"):SetText(L["BLUE"] .. ": " .. math.floor(value * 100) .. "%")
-        UpdateCrosshair()
-    end)
-    
+
     -- On/Off checkbox
-    local checkbox = CreateFrame("CheckButton", "CrosshairFrameEnabledCheckbox", panel, "InterfaceOptionsCheckButtonTemplate")
-    checkbox:SetPoint("TOPLEFT", 20, -280)
+    local checkbox = CreateFrame("CheckButton", "CrosshairFrameEnabledCheckbox", panel,
+        "InterfaceOptionsCheckButtonTemplate")
+    checkbox:SetPoint("TOPLEFT", colorButton, "BOTTOMLEFT", 0, -20)
     checkbox:SetChecked(CrosshairDB.enabled)
     getglobal(checkbox:GetName() .. "Text"):SetText(L["ENABLE"])
-    
+
     checkbox:SetScript("OnClick", function(self)
         CrosshairDB.enabled = self:GetChecked()
         UpdateCrosshair()
     end)
-    
-    -- Position Label (right side)
-    local positionLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    positionLabel:SetPoint("TOPRIGHT", -20, -60)
-    positionLabel:SetText(L["POSITION"] .. ":")
-    
+
+    -- Visibility dropdown
+    local visibilityLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    visibilityLabel:SetPoint("TOPLEFT", checkbox, "BOTTOMLEFT", 0, -10)
+    visibilityLabel:SetText(L["VISIBILITY"] .. ":")
+
+    local visibilityDropdown = CreateFrame("Frame", "CrosshairVisibilityDropdown", panel, "UIDropDownMenuTemplate")
+    visibilityDropdown:SetPoint("TOPLEFT", visibilityLabel, "BOTTOMLEFT", -15, -5)
+
+    local visibilityOptions = {
+        { value = "always",   text = L["ALWAYS"] },
+        { value = "combat",   text = L["IN_COMBAT"] },
+        { value = "instance", text = L["IN_INSTANCE"] },
+        { value = "group",    text = L["IN_GROUP"] },
+        { value = "never",    text = L["NEVER"] }
+    }
+
+    UIDropDownMenu_SetWidth(visibilityDropdown, 150)
+    UIDropDownMenu_Initialize(visibilityDropdown, function(self, level)
+        for _, option in ipairs(visibilityOptions) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = option.text
+            info.value = option.value
+            info.func = function()
+                CrosshairDB.visibility = option.value
+                UIDropDownMenu_SetText(visibilityDropdown, option.text)
+                UpdateCrosshair()
+            end
+            info.checked = (CrosshairDB.visibility == option.value)
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+
+    -- Set initial dropdown text
+    for _, option in ipairs(visibilityOptions) do
+        if option.value == (CrosshairDB.visibility or "always") then
+            UIDropDownMenu_SetText(visibilityDropdown, option.text)
+            break
+        end
+    end
+
     -- X-offset label
     local xOffsetLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    xOffsetLabel:SetPoint("TOPRIGHT", positionLabel, "BOTTOMRIGHT", 0, -10)
-    xOffsetLabel:SetText(L["X_OFFSET"] .. ":")
-    
+    xOffsetLabel:SetPoint("TOPRIGHT", -20, -10)
+
     -- X-offset slider (create first)
     local xOffsetSlider = CreateFrame("Slider", "CrosshairFrameXOffsetSlider", panel, "OptionsSliderTemplate")
     xOffsetSlider:SetPoint("TOPRIGHT", xOffsetLabel, "BOTTOMRIGHT", 0, -10)
@@ -310,42 +619,47 @@ local function CreateConfigFrame()
     getglobal(xOffsetSlider:GetName() .. "Low"):SetText("-500")
     getglobal(xOffsetSlider:GetName() .. "High"):SetText("500")
     getglobal(xOffsetSlider:GetName() .. "Text"):SetText(L["X_OFFSET"])
-    
+
     -- X-offset input field
     local xOffsetEditBox = CreateFrame("EditBox", "CrosshairXOffsetEditBox", panel, "InputBoxTemplate")
     xOffsetEditBox:SetSize(60, 20)
-    xOffsetEditBox:SetPoint("TOPRIGHT", xOffsetSlider, "BOTTOMRIGHT", -10, -5)
+    xOffsetEditBox:SetPoint("TOPRIGHT", xOffsetSlider, "BOTTOMRIGHT", 0, -15)
     xOffsetEditBox:SetAutoFocus(false)
-    xOffsetEditBox:SetNumeric(true)
+    xOffsetEditBox:SetNumeric(false)
     xOffsetEditBox:SetText(tostring(CrosshairDB.offsetX or 0))
-    
+
     xOffsetEditBox:SetScript("OnEnterPressed", function(self)
-        local value = tonumber(self:GetText()) or 0
-        value = math.max(-500, math.min(500, math.floor(value)))
-        self:SetText(tostring(value))
-        CrosshairDB.offsetX = value
-        xOffsetSlider:SetValue(value)
-        UpdateCrosshair()
-        self:ClearFocus()
+        local input = self:GetText()
+        local value = tonumber(input)
+        if value ~= nil then
+            value = math.max(-500, math.min(500, math.floor(value)))
+            self:SetText(tostring(value))
+            CrosshairDB.offsetX = value
+            xOffsetSlider:SetValue(value)
+            UpdateCrosshair()
+            self:ClearFocus()
+        else
+            self:SetText(tostring(CrosshairDB.offsetX or 0))
+            self:ClearFocus()
+        end
     end)
-    
+
     xOffsetEditBox:SetScript("OnEscapePressed", function(self)
         self:SetText(tostring(CrosshairDB.offsetX or 0))
         self:ClearFocus()
     end)
-    
+
     xOffsetSlider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value)
         CrosshairDB.offsetX = value
-        xOffsetEditBox:SetText(tostring(value))
+        xOffsetEditBox:SetText(tonumber(value))
         UpdateCrosshair()
     end)
-    
+
     -- Y-offset label
     local yOffsetLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    yOffsetLabel:SetPoint("TOPRIGHT", xOffsetEditBox, "BOTTOMRIGHT", 0, -20)
-    yOffsetLabel:SetText(L["Y_OFFSET"] .. ":")
-    
+    yOffsetLabel:SetPoint("TOPRIGHT", xOffsetEditBox, "BOTTOMRIGHT", 0, -10)
+
     -- Y-offset slider (create first)
     local yOffsetSlider = CreateFrame("Slider", "CrosshairFrameYOffsetSlider", panel, "OptionsSliderTemplate")
     yOffsetSlider:SetPoint("TOPRIGHT", yOffsetLabel, "BOTTOMRIGHT", 0, -10)
@@ -356,43 +670,49 @@ local function CreateConfigFrame()
     getglobal(yOffsetSlider:GetName() .. "Low"):SetText("-500")
     getglobal(yOffsetSlider:GetName() .. "High"):SetText("500")
     getglobal(yOffsetSlider:GetName() .. "Text"):SetText(L["Y_OFFSET"])
-    
+
     -- Y-offset input field
     local yOffsetEditBox = CreateFrame("EditBox", "CrosshairYOffsetEditBox", panel, "InputBoxTemplate")
     yOffsetEditBox:SetSize(60, 20)
-    yOffsetEditBox:SetPoint("TOPRIGHT", yOffsetSlider, "BOTTOMRIGHT", -10, -5)
+    yOffsetEditBox:SetPoint("TOPRIGHT", yOffsetSlider, "BOTTOMRIGHT", 0, -15)
     yOffsetEditBox:SetAutoFocus(false)
-    yOffsetEditBox:SetNumeric(true)
+    yOffsetEditBox:SetNumeric(false)
     yOffsetEditBox:SetText(tostring(CrosshairDB.offsetY or 0))
-    
+
     yOffsetEditBox:SetScript("OnEnterPressed", function(self)
-        local value = tonumber(self:GetText()) or 0
-        value = math.max(-500, math.min(500, math.floor(value)))
-        self:SetText(tostring(value))
-        CrosshairDB.offsetY = value
-        yOffsetSlider:SetValue(value)
-        UpdateCrosshair()
-        self:ClearFocus()
+        local input = self:GetText()
+        local value = tonumber(input)
+        if value ~= nil then
+            value = math.max(-500, math.min(500, math.floor(value)))
+            self:SetText(tostring(value))
+            CrosshairDB.offsetY = value
+            yOffsetSlider:SetValue(value)
+            UpdateCrosshair()
+            self:ClearFocus()
+        else
+            self:SetText(tostring(CrosshairDB.offsetY or 0))
+            self:ClearFocus()
+        end
     end)
-    
+
     yOffsetEditBox:SetScript("OnEscapePressed", function(self)
         self:SetText(tostring(CrosshairDB.offsetY or 0))
         self:ClearFocus()
     end)
-    
+
     yOffsetSlider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value)
         CrosshairDB.offsetY = value
         yOffsetEditBox:SetText(tostring(value))
         UpdateCrosshair()
     end)
-    
+
     -- Reset position button
     local resetButton = CreateFrame("Button", "CrosshairResetPositionButton", panel, "UIPanelButtonTemplate")
     resetButton:SetSize(150, 25)
-    resetButton:SetPoint("TOPRIGHT", yOffsetSlider, "BOTTOMRIGHT", 0, -30)
+    resetButton:SetPoint("TOPRIGHT", yOffsetEditBox, "BOTTOMRIGHT", 0, -10)
     resetButton:SetText(L["RESET_POSITION"])
-    
+
     resetButton:SetScript("OnClick", function()
         CrosshairDB.offsetX = 0
         CrosshairDB.offsetY = 0
@@ -402,7 +722,98 @@ local function CreateConfigFrame()
         yOffsetEditBox:SetText("0")
         UpdateCrosshair()
     end)
-    
+
+    -- Border checkbox
+    local borderCheckbox = CreateFrame("CheckButton", "CrosshairFrameBorderCheckbox", panel,
+        "InterfaceOptionsCheckButtonTemplate")
+    borderCheckbox:SetPoint("TOPRIGHT", resetButton, "BOTTOMRIGHT", 0, -10)
+    borderCheckbox:SetChecked(CrosshairDB.border)
+
+    local text = getglobal(borderCheckbox:GetName() .. "Text")
+    text:SetText(L["BORDER"])
+    text:ClearAllPoints()
+    text:SetPoint("RIGHT", borderCheckbox, "LEFT", 0, 0)
+
+    borderCheckbox:SetScript("OnClick", function(self)
+        CrosshairDB.border = self:GetChecked()
+        UpdateCrosshair()
+    end)
+
+    -- Border Size Label
+    local borderSizeLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    borderSizeLabel:SetPoint("TOPRIGHT", borderCheckbox, "BOTTOMRIGHT", 0, -10)
+
+    -- Border Size Slider
+    local borderSizeSlider = CreateFrame("Slider", "CrosshairFrameBorderSizeSlider", panel, "OptionsSliderTemplate")
+    borderSizeSlider:SetPoint("TOPRIGHT", borderSizeLabel, "BOTTOMRIGHT", 0, -10)
+    borderSizeSlider:SetMinMaxValues(1, 10)
+    borderSizeSlider:SetValue(CrosshairDB.borderSize or 2)
+    borderSizeSlider:SetValueStep(1)
+    borderSizeSlider:SetObeyStepOnDrag(true)
+    getglobal(borderSizeSlider:GetName() .. "Low"):SetText("1")
+    getglobal(borderSizeSlider:GetName() .. "High"):SetText("10")
+    getglobal(borderSizeSlider:GetName() .. "Text"):SetText(L["BORDER_SIZE"] .. ": " .. (CrosshairDB.borderSize or 2))
+
+    borderSizeSlider:SetScript("OnValueChanged", function(self, value)
+        value = math.floor(value)
+        CrosshairDB.borderSize = value
+        getglobal(self:GetName() .. "Text"):SetText(L["BORDER_SIZE"] .. ": " .. value)
+        UpdateCrosshair()
+    end)
+
+    -- Border Color Label
+    local borderColorLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    borderColorLabel:SetPoint("TOPRIGHT", borderSizeSlider, "BOTTOMRIGHT", 0, -20)
+    borderColorLabel:SetText(L["BORDER_COLOR"] .. ":")
+
+    -- Border Color Picker Button
+    local borderColorButton = CreateFrame("Button", "CrosshairBorderColorButton", panel)
+    borderColorButton:SetPoint("TOPRIGHT", borderColorLabel, "BOTTOMRIGHT", -5, -10)
+    borderColorButton:SetSize(40, 40)
+
+    -- Border frame
+    local borderFrame = CreateFrame("Frame", nil, borderColorButton)
+    borderFrame:SetAllPoints()
+    borderFrame:SetFrameLevel(borderColorButton:GetFrameLevel() - 1)
+    local borderTex = borderFrame:CreateTexture(nil, "BACKGROUND")
+    borderTex:SetAllPoints()
+    borderTex:SetColorTexture(0.3, 0.3, 0.3, 1)
+
+    -- Color preview texture (inset)
+    local borderColorTexture = borderColorButton:CreateTexture(nil, "ARTWORK")
+    borderColorTexture:SetPoint("TOPLEFT", 2, -2)
+    borderColorTexture:SetPoint("BOTTOMRIGHT", -2, 2)
+    borderColorTexture:SetColorTexture(CrosshairDB.borderColor.r, CrosshairDB.borderColor.g, CrosshairDB.borderColor.b, 1)
+
+    borderColorButton:SetScript("OnClick", function(self)
+        local previousR, previousG, previousB = CrosshairDB.borderColor.r, CrosshairDB.borderColor.g,
+            CrosshairDB.borderColor.b
+
+        local info = {
+            r = CrosshairDB.borderColor.r,
+            g = CrosshairDB.borderColor.g,
+            b = CrosshairDB.borderColor.b,
+            opacity = 1,
+            hasOpacity = false,
+            swatchFunc = function()
+                local r, g, b = ColorPickerFrame:GetColorRGB()
+                CrosshairDB.borderColor.r = r
+                CrosshairDB.borderColor.g = g
+                CrosshairDB.borderColor.b = b
+                borderColorTexture:SetColorTexture(r, g, b, 1)
+                UpdateCrosshair()
+            end,
+            cancelFunc = function()
+                CrosshairDB.borderColor.r = previousR
+                CrosshairDB.borderColor.g = previousG
+                CrosshairDB.borderColor.b = previousB
+                borderColorTexture:SetColorTexture(previousR, previousG, previousB, 1)
+                UpdateCrosshair()
+            end,
+        }
+        ColorPickerFrame:SetupColorPickerAndShow(info)
+    end)
+
     configFrame = frame
     return frame
 end
@@ -412,15 +823,18 @@ Crosshair:SetScript("OnEvent", function(self, event, addonName)
     if event == "ADDON_LOADED" and addonName == "crosshair" then
         UpdateCrosshair()
         print("|cFF00FF00===================================|r")
-        print("|cFF00FF00Crosshair|r |cFF88AAFFv1.0.0|r")
+        print("|cFF00FF00Crosshair|r |cFF88AAFFv1.3.0|r")
         print(" ")
         print("|cFF88AAFF" .. L["NEW_ADDON_IDEAS"] .. "|r")
         print("|cFFFFFFFF" .. L["VISIT"] .. "|r |cFF00FF00https://www.addon-forge.de/|r")
         print(" ")
     elseif event == "PLAYER_LOGIN" then
         UpdateCrosshair()
-        CreateConfigFrame() -- Frame erstellen
+        CreateConfigFrame()
     elseif event == "DISPLAY_SIZE_CHANGED" then
+        UpdateCrosshair()
+    elseif event == "PLAYER_REGEN_DISABLED" or event == "PLAYER_REGEN_ENABLED" or
+        event == "PLAYER_ENTERING_WORLD" or event == "GROUP_ROSTER_UPDATE" then
         UpdateCrosshair()
     end
 end)
@@ -432,7 +846,7 @@ SlashCmdList["CROSSHAIR"] = function(msg)
     if not configFrame then
         CreateConfigFrame()
     end
-    
+
     if configFrame:IsVisible() then
         configFrame:Hide()
     else
