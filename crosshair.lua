@@ -118,7 +118,7 @@ end
 
 -- Container frame for the crosshair (for moving)
 local crosshairContainer = CreateFrame("Frame", "CrosshairContainer", UIParent)
-crosshairContainer:SetFrameStrata("TOOLTIP")
+crosshairContainer:SetFrameStrata("LOW")
 crosshairContainer:SetSize(1, 1)
 crosshairContainer:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 crosshairContainer:EnableMouse(false)
