@@ -9,6 +9,7 @@ A customizable crosshair overlay addon for World of Warcraft that displays a sim
 - **Thickness Adjustment**: Adjust thickness from 1 to 100 pixels
 - **Color Customization**: Full RGB color control with individual sliders for Red, Green, and Blue values
 - **Position Control**: Fine-tune the crosshair position with X and Y offset sliders and input fields (range: -500 to +500)
+- **Combat Only**: Set to show only in combat
 - **Multi-Language Support**: Automatically detects and displays in:
   - English
   - German
@@ -40,6 +41,7 @@ A customizable crosshair overlay addon for World of Warcraft that displays a sim
   - Y Offset slider and input field (vertical position)
   - Reset Position button to center the crosshair
 - **Enable/Disable**: Toggle the crosshair on or off
+- **Show Only in Combat**: Toggle the crosshair to show only in combat
 
 ### Slash Commands
 
@@ -58,7 +60,7 @@ A customizable crosshair overlay addon for World of Warcraft that displays a sim
 
 ## Version
 
-1.1.0
+1.2.0
 
 ## Author
 
