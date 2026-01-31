@@ -4,7 +4,7 @@ Crosshair:SetFrameStrata("TOOLTIP")
 Crosshair:SetAllPoints(UIParent)
 Crosshair:EnableMouse(false)
 
--- Lokalisierung
+-- Localization
 local L = {}
 local locale = GetLocale()
 
@@ -23,12 +23,13 @@ L["RESET_POSITION"] = "Reset Position"
 L["POSITION"] = "Position"
 L["NEW_ADDON_IDEAS"] = "New Addon Ideas?"
 L["VISIT"] = "Visit"
+L["COMBAT"] = "Show Only in Combat"
 
 -- German Text
 if locale == "deDE" then
     L["TITLE"] = "Crosshair Einstellungen"
     L["SIZE"] = "Größe"
-    L["THICKNESS"] = "Thickness"
+    L["THICKNESS"] = "Dicke"
     L["COLOR"] = "Farbe"
     L["RED"] = "Rot"
     L["GREEN"] = "Grün"
@@ -40,13 +41,14 @@ if locale == "deDE" then
     L["POSITION"] = "Position"
     L["NEW_ADDON_IDEAS"] = "Neue Addon-Ideen?"
     L["VISIT"] = "Besuche"
+    L["COMBAT"] = "Nur im Kampf anzeigen"
 end
 
 -- Spanish Text
 if locale == "esES" or locale == "esMX" then
     L["TITLE"] = "Configuración de Mira"
     L["SIZE"] = "Tamaño"
-    L["THICKNESS"] = "Thickness"
+    L["THICKNESS"] = "Espesor"
     L["COLOR"] = "Color"
     L["RED"] = "Rojo"
     L["GREEN"] = "Verde"
@@ -58,13 +60,14 @@ if locale == "esES" or locale == "esMX" then
     L["POSITION"] = "Posición"
     L["NEW_ADDON_IDEAS"] = "¿Nuevas Ideas de Addon?"
     L["VISIT"] = "Visita"
+    L["COMBAT"] = "Mostrar solo en combate"
 end
 
 -- French Text
 if locale == "frFR" then
     L["TITLE"] = "Paramètres du Reticule"
     L["SIZE"] = "Taille"
-    L["THICKNESS"] = "Thickness"
+    L["THICKNESS"] = "Épaisseur"
     L["COLOR"] = "Couleur"
     L["RED"] = "Rouge"
     L["GREEN"] = "Vert"
@@ -76,6 +79,7 @@ if locale == "frFR" then
     L["POSITION"] = "Position"
     L["NEW_ADDON_IDEAS"] = "Nouvelles Idées d'Addon?"
     L["VISIT"] = "Visitez"
+    L["COMBAT"] = "Afficher uniquement en combat"
 end
 
 -- Standard settings
@@ -85,7 +89,8 @@ local defaults = {
     enabled = true,
     offsetX = 0,
     offsetY = 0,
-    thickness = 1
+    thickness = 1,
+    combat = false
 }
 
 -- Initialize database
@@ -144,12 +149,33 @@ local function UpdateCrosshair()
     -- Update color
     horizontalLine:SetVertexColor(CrosshairDB.color.r, CrosshairDB.color.g, CrosshairDB.color.b, CrosshairDB.color.a)
     verticalLine:SetVertexColor(CrosshairDB.color.r, CrosshairDB.color.g, CrosshairDB.color.b, CrosshairDB.color.a)
+
+    if CrosshairDB.combat then
+        horizontalLine:Hide()
+        verticalLine:Hide()
+    end
+end
+
+local function CombatStart()
+    if CrosshairDB.combat then
+        horizontalLine:Show()
+        verticalLine:Show()
+    end
+end
+
+local function CombatEnd()
+    if CrosshairDB.combat then
+        horizontalLine:Hide()
+        verticalLine:Hide()
+    end
 end
 
 -- Initialization
 Crosshair:RegisterEvent("PLAYER_LOGIN")
 Crosshair:RegisterEvent("ADDON_LOADED")
 Crosshair:RegisterEvent("DISPLAY_SIZE_CHANGED")
+Crosshair:RegisterEvent("PLAYER_REGEN_DISABLED")
+Crosshair:RegisterEvent("PLAYER_REGEN_ENABLED")
 
 -- Create configuration window
 local configFrame = nil
@@ -289,6 +315,17 @@ local function CreateConfigFrame()
         CrosshairDB.enabled = self:GetChecked()
         UpdateCrosshair()
     end)
+
+    -- On/Off checkbox in Combat Only
+    local checkbox = CreateFrame("CheckButton", "CrosshairFrameEnabledCombatCheckbox", panel, "InterfaceOptionsCheckButtonTemplate")
+    checkbox:SetPoint("TOPLEFT", 20, -300)
+    checkbox:SetChecked(CrosshairDB.combat or false)
+    getglobal(checkbox:GetName() .. "Text"):SetText(L["COMBAT"])
+    
+    checkbox:SetScript("OnClick", function(self)
+        CrosshairDB.combat = self:GetChecked()
+        UpdateCrosshair()
+    end)
     
     -- Position Label (right side)
     local positionLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -411,17 +448,15 @@ end
 Crosshair:SetScript("OnEvent", function(self, event, addonName)
     if event == "ADDON_LOADED" and addonName == "crosshair" then
         UpdateCrosshair()
-        print("|cFF00FF00===================================|r")
-        print("|cFF00FF00Crosshair|r |cFF88AAFFv1.0.0|r")
-        print(" ")
-        print("|cFF88AAFF" .. L["NEW_ADDON_IDEAS"] .. "|r")
-        print("|cFFFFFFFF" .. L["VISIT"] .. "|r |cFF00FF00https://www.addon-forge.de/|r")
-        print(" ")
     elseif event == "PLAYER_LOGIN" then
         UpdateCrosshair()
         CreateConfigFrame() -- Frame erstellen
     elseif event == "DISPLAY_SIZE_CHANGED" then
         UpdateCrosshair()
+    elseif event == "PLAYER_REGEN_DISABLED" then
+        CombatStart()
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        CombatEnd()
     end
 end)
 
