@@ -5,11 +5,12 @@ A customizable crosshair overlay addon for World of Warcraft that displays a sim
 ## Features
 
 - **Customizable Crosshair**: Simple two-line crosshair design that appears in the center of your screen
-- **Size Adjustment**: Adjustable size from 5 to 100 pixels
+- **Size Adjustment**: Adjustable X/Y-size from 5 to 100 pixels
 - **Thickness Adjustment**: Adjust thickness from 1 to 100 pixels
 - **Color Customization**: Full RGB color control with individual sliders for Red, Green, and Blue values
 - **Position Control**: Fine-tune the crosshair position with X and Y offset sliders and input fields (range: -500 to +500)
 - **Combat Only**: Set to show only in combat
+- **Strata**: Set Strata level to choose how it overlap with other UI elements
 - **Multi-Language Support**: Automatically detects and displays in:
   - English
   - German
@@ -33,15 +34,19 @@ A customizable crosshair overlay addon for World of Warcraft that displays a sim
 
 ### Configuration Options
 
-- **Size**: Adjust the crosshair size using the slider (5-100)
+- **Size**: Adjust the crosshair X/Y-size using the slider (5-100)
 - **Thickness**: Adjust the crosshair thickness using the slider (1-100)
-- **Color**: Customize the color using RGB sliders (0-100% for each channel)
+- **Color**: Customize the color using color picker
+- **Border**: Add border to crosshair
+- **Border Color**: Change color of the border
+- **Border Thickness**: Change thickness of the border
 - **Position**: Fine-tune the position using:
   - X Offset slider and input field (horizontal position)
   - Y Offset slider and input field (vertical position)
   - Reset Position button to center the crosshair
 - **Enable/Disable**: Toggle the crosshair on or off
 - **Show Only in Combat**: Toggle the crosshair to show only in combat
+- **Strata**: Set Strata level to choose how it overlap with other UI elements
 
 ### Slash Commands
 
@@ -54,20 +59,22 @@ A customizable crosshair overlay addon for World of Warcraft that displays a sim
 
 ## Notes
 
-- The crosshair is displayed at the "TOOLTIP" frame strata, ensuring it appears above most UI elements
+- The crosshair is displayed at the "TOOLTIP" frame strata, ensuring it appears above most UI elements by default
 - Position offsets are relative to the screen center
 - All settings are saved per character
 
 ## Version
 
-1.2.0
+1.3.0
 
-## Author
+## Contributors
 
-Nmxsz, GeNyaa
+<a href="https://github.com/GeNyaa/crosshair-character-position/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=GeNyaa/crosshair-character-position" />
+</a>
+
+Forked from Nmxsz
 
 ## License
 
 MIT License
-
-
