@@ -65,7 +65,7 @@ A customizable crosshair overlay addon for World of Warcraft that displays a sim
 
 ## Version
 
-1.3.1
+1.3.2
 
 ## Contributors
 
